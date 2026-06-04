@@ -2,19 +2,22 @@ import QtQuick
 import QtQuick.Layouts
 
 ColumnLayout {
-    property string title: ""
-    default property alias content: inner.data
-    spacing: 8
+    property string title: "Section"
+    spacing: 12
 
     Text {
-        text: title
-        color: "#aaaaaa"
+        text: parent.title
+        color: "#888"
         font.pixelSize: 12
+        font.bold: true
+        Layout.leftMargin: 16
+        Layout.topMargin: 8
+        Layout.bottomMargin: 4
     }
 
-    Item {
+    Column {
         id: inner
         Layout.fillWidth: true
-        implicitHeight: childrenRect.height
+        spacing: 2
     }
 }

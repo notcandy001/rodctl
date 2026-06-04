@@ -5,3 +5,7 @@ singleton BarSettings    1.0 BarSettings.qml
 SettingsSection          1.0 SettingsSection.qml
 SettingsButton           1.0 SettingsButton.qml
 SettingChip              1.0 SettingChip.qml
+SettingRow               1.0 SettingRow.qml
+SettingDropdown          1.0 SettingDropdown.qml
+SettingToggle            1.0 SettingToggle.qml
+SettingAction            1.0 SettingAction.qml
