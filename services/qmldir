@@ -1,0 +1,4 @@
+module qs.services
+
+singleton HyprlandData 1.0 HyprlandData.qml
+singleton NetworkInfo  1.0 NetworkInfo.qml

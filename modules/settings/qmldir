@@ -1,0 +1,7 @@
+module qs.modules.settings
+
+singleton SettingsWindow 1.0 SettingsWindow.qml
+singleton BarSettings    1.0 BarSettings.qml
+SettingsSection          1.0 SettingsSection.qml
+SettingsButton           1.0 SettingsButton.qml
+SettingChip              1.0 SettingChip.qml
