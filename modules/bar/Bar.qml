@@ -8,20 +8,20 @@ WlrLayershell {
 
     id: bar
 
-    layer: WlrLayer.Top
+    layer: WlrLayer.Overlay
     anchors.top:    BarSettings.barPosition !== "bottom"
     anchors.bottom: BarSettings.barPosition === "bottom"
+    anchors.left:   true
+    anchors.right:  true
     implicitWidth: screen.width
-
-    // Bar height is driven by BarSettings (live)
-    implicitHeight: notch.mode === "idle"
-                    ? notch.collapsedHeight + BarSettings.topSpacing
-                    : notch.expandedHeight  + BarSettings.topSpacing
+    implicitHeight: 200 // give plenty of space
 
     margins.top:    BarSettings.barPosition !== "bottom" ? BarSettings.topSpacing : 0
     margins.bottom: BarSettings.barPosition === "bottom" ? BarSettings.topSpacing : 0
+    margins.left:   10
+    margins.right:  10
 
-    exclusiveZone: notch.collapsedHeight + BarSettings.topSpacing
+    exclusiveZone: 40 + BarSettings.topSpacing
 
     color: "transparent"
 
@@ -43,11 +43,18 @@ WlrLayershell {
             anchors {
                 left:      parent.left
                 top:       parent.top
-                leftMargin: BarSettings.leftMargin
-                topMargin:  10
+                topMargin: 0
             }
             z: 2
             onLauncherRequested: notch.mode = "launcher"
+        }
+
+        // ── CENTER NOTCH ───────────────────────────────────────────
+        Notch {
+            id: notch
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            z: 3
         }
 
         // ── RIGHT PILLS ────────────────────────────────────────────
@@ -56,19 +63,9 @@ WlrLayershell {
             anchors {
                 right:      parent.right
                 top:        parent.top
-                rightMargin: BarSettings.rightMargin
-                topMargin:   10
+                topMargin:   0
             }
             z: 2
-        }
-
-        // ── CENTER NOTCH ───────────────────────────────────────────
-        Notch {
-            id: notch
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: parent.top
-            anchors.topMargin: 6
-            z: 3
         }
     }
 }

@@ -11,14 +11,10 @@ Rectangle {
     id: root
 
     property string mode: "idle"
-    property int collapsedHeight: 40
+    property int collapsedHeight: 38
     property int expandedHeight: 460
 
     signal closeRequested()
-
-   
-    // CLEAN TITLE LOGIC 
-   
 
     property Toplevel activeToplevel: HyprlandData.isWorkspaceOccupied(HyprlandData.focusedWorkspaceId)
         ? HyprlandData.activeToplevel
@@ -38,31 +34,31 @@ Rectangle {
             return parts[0]
 
         return raw
-        }
-
-        // WIDTH LOGIC
+    }
 
     width: {
         if (mode !== "idle")
             return 800
 
-        var base = 160
+        var base = 200
         var textWidth = titleText.implicitWidth
         var calculated = base + textWidth
 
-        return Math.min(Math.max(calculated, 240), screen.width * 0.7)
+        return Math.min(Math.max(calculated, 300), screen.width * 0.7)
     }
 
     height: mode === "idle" ? collapsedHeight : expandedHeight
-    radius: mode === "idle" ? 20 : 28
-    color: Qt.rgba(0.063, 0.063, 0.082, BarSettings.notchOpacity)
+    radius: mode === "idle" ? 19 : 28
+    color: Qt.rgba(0.063, 0.063, 0.082, BarSettings.notchOpacity !== undefined ? BarSettings.notchOpacity : 0.9)
+    border.width: 1
+    border.color: "#2aFFFFFF"
 
     Behavior on width {
-        NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: 300; easing.type: Easing.OutQuint }
     }
 
     Behavior on height {
-        NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
+        NumberAnimation { duration: 300; easing.type: Easing.OutQuint }
     }
 
     Keys.onEscapePressed: {
@@ -82,14 +78,17 @@ Rectangle {
         Row {
             anchors.fill: parent
             anchors.margins: 16
+            anchors.leftMargin: 20
+            anchors.rightMargin: 20
             spacing: 12
 
             // TIME (HARD LEFT)
             Text {
                 id: timeText
-                text: Qt.formatTime(new Date(), "hh:mm")
+                text: Qt.formatTime(new Date(), "hh:mm a")
                 color: "#ffffff"
                 font.pixelSize: 14
+                font.weight: Font.Bold
                 verticalAlignment: Text.AlignVCenter
                 height: parent.height
             }
@@ -117,7 +116,7 @@ Rectangle {
             running: true
             repeat: true
             onTriggered: timeText.text =
-                Qt.formatTime(new Date(), "hh:mm")
+                Qt.formatTime(new Date(), "hh:mm a")
         }
 
         MouseArea {
