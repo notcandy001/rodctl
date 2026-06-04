@@ -13,10 +13,46 @@ Singleton {
     id: root
 
     property bool visible: false
-    property string activePage: "general"   // general | appearance | network | power | compositor
+    property string activePage: "general"
+    property int selectedIndex: 0
+    property string searchQuery: ""
+
+    readonly property var sectionModel: [
+        { id: "general",    icon: "󰒓", label: "General"    },
+        { id: "appearance", icon: "󰉼", label: "Appearance" },
+        { id: "network",    icon: "󰤨", label: "Network"    },
+        { id: "power",      icon: "⏻",  label: "Power"      },
+        { id: "compositor", icon: "⚙",  label: "Compositor" }
+    ]
+
+    property var filteredSections: {
+        if (searchQuery === "") return sectionModel;
+        var query = searchQuery.toLowerCase();
+        return sectionModel.filter(item => item.label.toLowerCase().includes(query));
+    }
+
+    onSearchQueryChanged: {
+        selectedIndex = 0;
+        if (filteredSections.length > 0) {
+            activePage = filteredSections[0].id;
+        }
+    }
 
     function open(page) {
-        activePage = page !== undefined ? page : "general"
+        if (page !== undefined) {
+            activePage = page
+            searchQuery = "" // Reset search when opening specific page
+            for (let i = 0; i < sectionModel.length; i++) {
+                if (sectionModel[i].id === page) {
+                    selectedIndex = i;
+                    break;
+                }
+            }
+        } else {
+            if (filteredSections.length > 0) {
+                activePage = filteredSections[selectedIndex].id
+            }
+        }
         visible = true
     }
 
@@ -28,14 +64,9 @@ Singleton {
         id: win
         visible: root.visible
         layer: WlrLayer.Overlay
-        anchors.top:    true
-        anchors.right:  true
-        anchors.bottom: false
-        anchors.left:   false
-        margins.top:   12
-        margins.right: 12
-        implicitWidth:  520
-        implicitHeight: 640
+        anchors.centerIn: Quickshell.screens[0] // Approximation
+        implicitWidth:  900
+        implicitHeight: 650
         color: "transparent"
         exclusiveZone: 0
         keyboardFocus: WlrKeyboardFocus.OnDemand
@@ -44,109 +75,136 @@ Singleton {
 
         Rectangle {
             anchors.fill: parent
-            radius: 28
-            color: "#1a1a1aee"
+            radius: 12
+            color: "#1a1a1a"
             border.color: "#33ffffff"
             border.width: 1
+            clip: true
 
             RowLayout {
                 anchors.fill: parent
-                spacing: 0
+                spacing: 8
+                anchors.margins: 16
 
                 // ── Sidebar ───────────────────────────────────────
-                Rectangle {
-                    Layout.preferredWidth: 160
+                ColumnLayout {
+                    Layout.preferredWidth: 200
+                    Layout.maximumWidth: 200
                     Layout.fillHeight: true
-                    color: "#121212"
-                    radius: 28
+                    spacing: 8
 
-                    // Right border
-                    Rectangle {
-                        anchors { top: parent.top; bottom: parent.bottom; right: parent.right }
-                        width: 1
-                        color: "#22ffffff"
+                    // Search input
+                    TextField {
+                        id: searchInput
+                        Layout.fillWidth: true
+                        placeholderText: "Search..."
+                        placeholderTextColor: "#888"
+                        color: "white"
+                        font.pixelSize: 14
+                        background: Rectangle {
+                            color: "#22ffffff"
+                            radius: 8
+                        }
+                        onTextChanged: root.searchQuery = text
                     }
 
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 12
-                        spacing: 8
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
 
-                        Text {
-                            text: "Settings"
-                            color: "white"
-                            font.pixelSize: 18
-                            font.bold: true
-                            Layout.topMargin: 12
-                            Layout.bottomMargin: 20
-                            Layout.alignment: Qt.AlignLeft
-                        }
-
-                        Repeater {
-                            model: [
-                                { id: "general",    icon: "󰒓", label: "General"    },
-                                { id: "appearance", icon: "󰉼", label: "Appearance" },
-                                { id: "network",    icon: "󰤨", label: "Network"    },
-                                { id: "power",      icon: "⏻",  label: "Power"      },
-                                { id: "compositor", icon: "⚙",  label: "Compositor" }
-                            ]
-
-                            delegate: Rectangle {
-                                Layout.fillWidth: true
-                                height: 40
-                                radius: 10
-                                color: root.activePage === modelData.id ? "#22ffffff" : "transparent"
-
-                                Behavior on color { ColorAnimation { duration: 150 } }
-
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 12
-                                    anchors.rightMargin: 12
-                                    spacing: 12
-
-                                    Text {
-                                        text: modelData.icon
-                                        color: root.activePage === modelData.id ? "white" : "#888"
-                                        font.pixelSize: 16
-                                    }
-                                    Text {
-                                        text: modelData.label
-                                        color: root.activePage === modelData.id ? "white" : "#888"
-                                        font.pixelSize: 14
-                                    }
-                                }
-
-                                MouseArea {
-                                    anchors.fill: parent
-                                    onClicked: root.activePage = modelData.id
-                                }
-                            }
-                        }
-
-                        Item { Layout.fillHeight: true }
-
+                        // Sliding highlight
                         Rectangle {
-                            Layout.fillWidth: true
-                            height: 40
-                            radius: 10
-                            color: closeHover.containsMouse ? "#33ff6b6b" : "#18ff6b6b"
-
-                            RowLayout {
-                                anchors.centerIn: parent
-                                spacing: 8
-                                Text { text: "✕"; color: "#ff8888"; font.pixelSize: 14 }
-                                Text { text: "Close"; color: "#ff8888"; font.pixelSize: 14 }
+                            id: tabHighlight
+                            width: parent.width
+                            height: 48
+                            radius: 8
+                            color: "#33ffffff"
+                            y: root.selectedIndex * (48 + 4)
+                            visible: root.filteredSections.length > 0
+                            Behavior on y {
+                                NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
                             }
+                        }
 
-                            MouseArea {
-                                id: closeHover
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                onClicked: root.close()
+                        Column {
+                            id: sidebar
+                            width: parent.width
+                            spacing: 4
+
+                            Repeater {
+                                model: root.filteredSections
+
+                                delegate: Item {
+                                    width: sidebar.width
+                                    height: 48
+                                    
+                                    property bool isActive: index === root.selectedIndex
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 12
+                                        anchors.rightMargin: 12
+                                        spacing: 12
+
+                                        Text {
+                                            text: modelData.icon
+                                            color: isActive ? "white" : "#aaa"
+                                            font.pixelSize: 18
+                                            Behavior on color { ColorAnimation { duration: 150 } }
+                                        }
+                                        Text {
+                                            text: modelData.label
+                                            color: isActive ? "white" : "#aaa"
+                                            font.pixelSize: 15
+                                            font.bold: isActive
+                                            Behavior on color { ColorAnimation { duration: 150 } }
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        onClicked: {
+                                            root.selectedIndex = index;
+                                            root.activePage = modelData.id;
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
+
+                    Item { Layout.fillHeight: true }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 40
+                        radius: 8
+                        color: closeHover.containsMouse ? "#33ff6b6b" : "transparent"
+                        border.color: "#18ff6b6b"
+                        border.width: 1
+
+                        RowLayout {
+                            anchors.centerIn: parent
+                            spacing: 8
+                            Text { text: "✕"; color: "#ff8888"; font.pixelSize: 14 }
+                            Text { text: "Close"; color: "#ff8888"; font.pixelSize: 14; font.bold: true }
+                        }
+
+                        MouseArea {
+                            id: closeHover
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: root.close()
+                        }
+                    }
+                }
+
+                // Vertical separator
+                Rectangle {
+                    Layout.fillHeight: true
+                    width: 1
+                    color: "#22ffffff"
                 }
 
                 // ── Content area ──────────────────────────────────
@@ -155,8 +213,9 @@ Singleton {
                     Layout.fillHeight: true
 
                     Loader {
+                        id: panelLoader
                         anchors.fill: parent
-                        anchors.margins: 24
+                        anchors.margins: 16
                         sourceComponent: {
                             switch (root.activePage) {
                                 case "general":    return generalPage
@@ -166,6 +225,11 @@ Singleton {
                                 case "compositor": return compositorPage
                                 default:           return generalPage
                             }
+                        }
+                        
+                        opacity: status === Loader.Ready ? 1 : 0
+                        Behavior on opacity {
+                            NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
                         }
                     }
                 }
@@ -179,12 +243,12 @@ Singleton {
     Component {
         id: generalPage
         ColumnLayout {
-            spacing: 20
+            spacing: 24
 
             Text {
                 text: "General"
                 color: "white"
-                font.pixelSize: 24
+                font.pixelSize: 28
                 font.bold: true
             }
 
@@ -192,7 +256,6 @@ Singleton {
                 title: "Bar Layout"
                 Layout.fillWidth: true
 
-                // The inner Column of SettingsSection now takes these as children
                 SettingRow {
                     label: "Position"
                     control: SettingDropdown {
@@ -209,7 +272,7 @@ Singleton {
                         from: 32; to: 64; stepSize: 2
                         value: BarSettings.barHeight
                         onMoved: BarSettings.barHeight = value
-                        width: 120
+                        width: 160
                     }
                 }
                 SettingRow {
@@ -218,7 +281,7 @@ Singleton {
                         from: 0; to: 40; stepSize: 1
                         value: BarSettings.leftMargin
                         onMoved: BarSettings.leftMargin = value
-                        width: 120
+                        width: 160
                     }
                 }
                 SettingRow {
@@ -227,10 +290,11 @@ Singleton {
                         from: 0; to: 40; stepSize: 1
                         value: BarSettings.rightMargin
                         onMoved: BarSettings.rightMargin = value
-                        width: 120
+                        width: 160
                     }
                 }
             }
+            Item { Layout.fillHeight: true }
         }
     }
 
@@ -240,12 +304,12 @@ Singleton {
     Component {
         id: appearancePage
         ColumnLayout {
-            spacing: 20
+            spacing: 24
 
             Text {
                 text: "Appearance"
                 color: "white"
-                font.pixelSize: 24
+                font.pixelSize: 28
                 font.bold: true
             }
 
@@ -259,7 +323,7 @@ Singleton {
                         from: 0.3; to: 1.0; stepSize: 0.05
                         value: BarSettings.notchOpacity
                         onMoved: BarSettings.notchOpacity = value
-                        width: 120
+                        width: 160
                     }
                 }
                 SettingRow {
@@ -268,7 +332,7 @@ Singleton {
                         from: 0.1; to: 1.0; stepSize: 0.05
                         value: BarSettings.pillOpacity
                         onMoved: BarSettings.pillOpacity = value
-                        width: 120
+                        width: 160
                     }
                 }
                 SettingRow {
@@ -277,10 +341,11 @@ Singleton {
                         from: 0; to: 24; stepSize: 1
                         value: BarSettings.pillRadius
                         onMoved: BarSettings.pillRadius = value
-                        width: 120
+                        width: 160
                     }
                 }
             }
+            Item { Layout.fillHeight: true }
         }
     }
 
@@ -290,12 +355,12 @@ Singleton {
     Component {
         id: networkPage
         ColumnLayout {
-            spacing: 20
+            spacing: 24
 
             Text {
                 text: "Network"
                 color: "white"
-                font.pixelSize: 24
+                font.pixelSize: 28
                 font.bold: true
             }
 
@@ -320,21 +385,22 @@ Singleton {
                     }
                 }
             }
+            Item { Layout.fillHeight: true }
         }
     }
 
     // ════════════════════════════════════════════════════════════════
     // PAGE: Power
-    // ════════════════════════════════════════════}
+    // ════════════════════════════════════════════════════════════════
     Component {
         id: powerPage
         ColumnLayout {
-            spacing: 20
+            spacing: 24
 
             Text {
                 text: "Power"
                 color: "white"
-                font.pixelSize: 24
+                font.pixelSize: 28
                 font.bold: true
             }
 
@@ -354,7 +420,9 @@ Singleton {
                     label: "Logout"
                     onActivated: {
                         var p = Qt.createQmlObject('import Quickshell.Io; Process {}', parent)
-                        }
+                        p.command = ["bash", "-c", "hyprctl dispatch exit"]
+                        p.running = true
+                    }
                 }
                 SettingAction {
                     label: "Reboot"
@@ -367,12 +435,13 @@ Singleton {
                 SettingAction {
                     label: "Shutdown"
                     onActivated: {
-                        var p = Qt.createQmlObject('다고', parent)
+                        var p = Qt.createQmlObject('import Quickshell.Io; Process {}', parent)
                         p.command = ["bash", "-c", "systemctl poweroff"]
                         p.running = true
                     }
                 }
             }
+            Item { Layout.fillHeight: true }
         }
     }
 
@@ -382,12 +451,12 @@ Singleton {
     Component {
         id: compositorPage
         ColumnLayout {
-            spacing: 20
+            spacing: 24
 
             Text {
                 text: "Compositor"
                 color: "white"
-                font.pixelSize: 24
+                font.pixelSize: 28
                 font.bold: true
             }
 
@@ -406,6 +475,7 @@ Singleton {
                     }
                 }
             }
+            Item { Layout.fillHeight: true }
         }
     }
 }
