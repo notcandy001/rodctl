@@ -2,10 +2,9 @@ module qs.modules.settings
 
 singleton SettingsWindow 1.0 SettingsWindow.qml
 singleton BarSettings    1.0 BarSettings.qml
-SettingsSection          1.0 SettingsSection.qml
-SettingsButton           1.0 SettingsButton.qml
-SettingChip              1.0 SettingChip.qml
-SettingRow               1.0 SettingRow.qml
-SettingDropdown          1.0 SettingDropdown.qml
-SettingToggle            1.0 SettingToggle.qml
-SettingAction            1.0 SettingAction.qml
+SectionTitle             1.0 SectionTitle.qml
+SettingCard              1.0 SettingCard.qml
+ChipToggle               1.0 ChipToggle.qml
+StyledSlider             1.0 StyledSlider.qml
+ActionButton             1.0 ActionButton.qml
+ThemeChip                1.0 ThemeChip.qml

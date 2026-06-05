@@ -1,76 +1,54 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls
 import Quickshell.Hyprland
 import Quickshell.Wayland
 import qs.services
 import qs.modules.functions
 import qs.modules.settings
+import qs.theme
 
 Rectangle {
     id: root
 
     property string mode: "idle"
-    property int collapsedHeight: 38
-    property int expandedHeight: 460
+    property int collapsedHeight: 40
+    property int expandedHeight:  460
 
     signal closeRequested()
 
     property Toplevel activeToplevel: HyprlandData.isWorkspaceOccupied(HyprlandData.focusedWorkspaceId)
-        ? HyprlandData.activeToplevel
-        : null
+        ? HyprlandData.activeToplevel : null
 
     property string cleanTitle: {
-        if (!activeToplevel)
-            return "Desktop"
-
+        if (!activeToplevel) return "Desktop"
         var raw = activeToplevel?.title
-
-        if (!raw || raw === "" || raw === "Workspace")
-            return "Desktop"
-
+        if (!raw || raw === "" || raw === "Workspace") return "Desktop"
         var parts = raw.split(" - ")
-        if (parts.length > 1)
-            return parts[0]
-
+        if (parts.length > 1) return parts[0]
         return raw
     }
 
     width: {
-        if (mode !== "idle")
-            return 800
-
-        var base = 200
+        if (mode !== "idle") return 800
+        var base = 160
         var textWidth = titleText.implicitWidth
         var calculated = base + textWidth
-
-        return Math.min(Math.max(calculated, 300), screen.width * 0.7)
+        return Math.min(Math.max(calculated, 240), screen.width * 0.7)
     }
 
     height: mode === "idle" ? collapsedHeight : expandedHeight
-    radius: mode === "idle" ? 19 : 28
-    color: Qt.rgba(0.063, 0.063, 0.082, BarSettings.notchOpacity !== undefined ? BarSettings.notchOpacity : 0.9)
-    border.width: 1
-    border.color: "#2aFFFFFF"
+    radius: mode === "idle" ? 20 : 28
 
-    Behavior on width {
-        NumberAnimation { duration: 300; easing.type: Easing.OutQuint }
-    }
+    color: Qt.rgba(Colors.background.r, Colors.background.g, Colors.background.b, BarSettings.notchOpacity)
+    Behavior on color { ColorAnimation { duration: 200 } }
 
-    Behavior on height {
-        NumberAnimation { duration: 300; easing.type: Easing.OutQuint }
-    }
+    Behavior on width  { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+    Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
 
-    Keys.onEscapePressed: {
-        if (mode !== "idle")
-            mode = "idle"
-    }
-
+    Keys.onEscapePressed: { if (mode !== "idle") mode = "idle" }
     focus: true
 
-
-    // IDLE CONTENT (Fixed)
-
+    // ── IDLE CONTENT ──────────────────────────────────────────────
     Item {
         anchors.fill: parent
         visible: mode === "idle"
@@ -78,45 +56,38 @@ Rectangle {
         Row {
             anchors.fill: parent
             anchors.margins: 16
-            anchors.leftMargin: 20
-            anchors.rightMargin: 20
             spacing: 12
 
-            // TIME (HARD LEFT)
             Text {
                 id: timeText
-                text: Qt.formatTime(new Date(), "hh:mm a")
-                color: "#ffffff"
+                text: Qt.formatTime(new Date(), "hh:mm")
+                color: Colors.overBackground
                 font.pixelSize: 14
-                font.weight: Font.Bold
                 verticalAlignment: Text.AlignVCenter
                 height: parent.height
+                Behavior on color { ColorAnimation { duration: 200 } }
             }
 
-            // FLEX SPACE
             Item {
                 width: parent.width - timeText.width - titleText.width - 32
                 height: 1
             }
 
-            // TITLE (HARD RIGHT)
             Text {
                 id: titleText
                 text: root.cleanTitle
-                color: "#ffffff"
+                color: Qt.rgba(Colors.overBackground.r, Colors.overBackground.g, Colors.overBackground.b, 0.7)
                 font.pixelSize: 14
                 elide: Text.ElideRight
                 verticalAlignment: Text.AlignVCenter
                 height: parent.height
+                Behavior on color { ColorAnimation { duration: 200 } }
             }
         }
 
         Timer {
-            interval: 60000
-            running: true
-            repeat: true
-            onTriggered: timeText.text =
-                Qt.formatTime(new Date(), "hh:mm a")
+            interval: 60000; running: true; repeat: true
+            onTriggered: timeText.text = Qt.formatTime(new Date(), "hh:mm")
         }
 
         MouseArea {
@@ -125,31 +96,70 @@ Rectangle {
         }
     }
 
-    // ======================================================
-    // DASHBOARD (OPEN / CLOSE FIXED)
-    // ======================================================
-
+    // ── DASHBOARD ──────────────────────────────────────────────────
     Item {
         anchors.fill: parent
-        anchors.margins: 32
+        anchors.margins: 24
         visible: mode === "dashboard"
 
-        Rectangle {
+        ColumnLayout {
             anchors.fill: parent
-            radius: 22
-            color: "#151515"
+            spacing: 16
 
-            Text {
-                anchors.centerIn: parent
-                text: "Dashboard"
-                color: "white"
-                font.pixelSize: 22
+            // Tab row
+            Row {
+                spacing: 24
+                Layout.fillWidth: true
+                Repeater {
+                    model: ["Widgets", "Pins", "Wallpapers", "Mixer"]
+                    delegate: Text {
+                        text: modelData
+                        color: dashTabs.currentTab === modelData ? Colors.primary : Colors.outline
+                        font.pixelSize: 15
+                        Behavior on color { ColorAnimation { duration: 150 } }
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: dashTabs.currentTab = modelData
+                        }
+                    }
+                }
             }
+
+            // Tab content
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                radius: 18
+                color: Qt.rgba(Colors.surfaceContainer.r, Colors.surfaceContainer.g, Colors.surfaceContainer.b, 0.8)
+                Behavior on color { ColorAnimation { duration: 200 } }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: dashTabs.currentTab
+                    color: Colors.outline
+                    font.pixelSize: 16
+                }
+            }
+        }
+
+        QtObject {
+            id: dashTabs
+            property string currentTab: "Widgets"
         }
 
         MouseArea {
             anchors.fill: parent
+            z: -1
             onClicked: root.mode = "idle"
         }
+    }
+
+    // ── LAUNCHER ───────────────────────────────────────────────────
+    Item {
+        anchors.fill: parent
+        anchors.margins: 24
+        visible: mode === "launcher"
+
+        LauncherView { anchors.fill: parent }
     }
 }

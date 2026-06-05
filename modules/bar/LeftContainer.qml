@@ -1,90 +1,58 @@
 import QtQuick
-import QtQuick.Layouts
 import Quickshell.Io
+import qs.theme
 
-Rectangle {
-    id: root
-
+Row {
     signal launcherRequested()
+    spacing: 10
 
-    width: row.width + 20
-    height: 38
-    radius: 19
-    color: "#2aFFFFFF"
+    // Launcher button
+    Rectangle {
+        width: 32; height: 32; radius: 16
+        color: lh.containsMouse ? Colors.pillHover : Colors.pillBg
+        Behavior on color { ColorAnimation { duration: 120 } }
+        Text {
+            anchors.centerIn: parent
+            text: "󰣇"
+            font.pixelSize: 16
+            color: Colors.overBackground
+            Behavior on color { ColorAnimation { duration: 200 } }
+        }
+        MouseArea { id: lh; anchors.fill: parent; hoverEnabled: true; onClicked: launcherRequested() }
+    }
 
-    Row {
-        id: row
-        anchors.centerIn: parent
-        spacing: 10
-
-        // ── Launcher button (moon icon) ──────────────────────────────
-        Rectangle {
-            width: 30
-            height: 30
-            radius: 15
-            color: launcherHover.containsMouse ? "#66ffffff" : "transparent"
-            anchors.verticalCenter: parent.verticalCenter
-
+    // Pinned apps
+    Repeater {
+        model: pinnedApps
+        delegate: Rectangle {
+            width: 28; height: 28; radius: BarSettings.pillRadius
+            color: ah.containsMouse ? Colors.pillHover : Colors.pillBg
             Behavior on color { ColorAnimation { duration: 120 } }
-
             Text {
                 anchors.centerIn: parent
-                text: "󰣇"              // nerd-font arch icon
-                font.pixelSize: 18
-                color: "white"
+                text: model.icon
+                font.pixelSize: 15
+                color: Colors.overBackground
+                Behavior on color { ColorAnimation { duration: 200 } }
             }
-
             MouseArea {
-                id: launcherHover
-                anchors.fill: parent
-                hoverEnabled: true
-                onClicked: launcherRequested()
-            }
-        }
-
-        // ── Pinned app icons ─────────────────────────────────────────
-        Repeater {
-            model: pinnedApps
-
-            delegate: Rectangle {
-                width: 30
-                height: 30
-                radius: 15
-                color: appHover.containsMouse ? "#44ffffff" : "transparent"
-                anchors.verticalCenter: parent.verticalCenter
-
-                Behavior on color { ColorAnimation { duration: 120 } }
-
-                // Icon text (nerd font glyphs)
-                Text {
-                    anchors.centerIn: parent
-                    text: model.icon
-                    font.pixelSize: 16
-                    color: "white"
-                }
-
-                MouseArea {
-                    id: appHover
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    onClicked: {
-                        var p = Qt.createQmlObject('import Quickshell.Io; Process {}', parent)
-                        p.command = ["bash", "-c", model.exec + " &"]
-                        p.running = true
-                    }
+                id: ah; anchors.fill: parent; hoverEnabled: true
+                onClicked: {
+                    var p = Qt.createQmlObject('import Quickshell.Io; Process {}', parent)
+                    p.command = ["bash", "-c", model.exec + " &"]
+                    p.running = true
                 }
             }
         }
     }
 
-    // ── App data ─────────────────────────────────────────────────
     ListModel {
         id: pinnedApps
         Component.onCompleted: {
-            append({ icon: "󰖟",  exec: "firefox",  tooltip: "Firefox"  })
-            append({ icon: "󰊠",  exec: "kitty",    tooltip: "Terminal" })
-            append({ icon: "󰷏",  exec: "dolphin",  tooltip: "Files"    })
-            append({ icon: "󰨞",  exec: "code",     tooltip: "VSCode"   })
+            append({ icon: "󰖟", exec: "firefox",  tooltip: "Firefox"  })
+            append({ icon: "󰊠", exec: "kitty",    tooltip: "Terminal" })
+            append({ icon: "󰷏", exec: "dolphin",  tooltip: "Files"    })
+            append({ icon: "",  exec: "code",     tooltip: "VSCode"   })
         }
     }
 }
