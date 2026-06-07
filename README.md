@@ -2,7 +2,16 @@
 
 A Go CLI controller for **CrescentShell** (Moonveil's Quickshell UI).
 
-Every command (except `status` and `start`) checks if CrescentShell is actually running before doing anything. If it's not up, you get a clean error instead of a silent 
+Every command (except `status` and `start`) checks if CrescentShell is actually running before doing anything. If it's not up, you get a clean error instead of a silent fail.
+
+## Install
+
+```bash
+chmod +x install.sh
+./install.sh
+```
+
+Requires Go. Binary installs to `~/.local/bin/rodctl`.
 
 ## Commands
 
@@ -53,6 +62,12 @@ rodctl volume up
 rodctl volume down
 rodctl volume mute
 rodctl brightness up
-rodctl brightness 
+rodctl brightness down
 ```
 
+### Theme
+```bash
+rodctl theme ~/Pictures/wall.jpg    # apply wallpaper + matugen colors
+rodctl wallpaper toggle             # open wallpaper selector
+rodctl wallpaper random             # pick a random wallpaper
+```
