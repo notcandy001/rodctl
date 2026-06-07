@@ -1,4 +1,0 @@
-module qs.theme
-
-singleton Colors        1.0 Colors.qml
-singleton ThemeService  1.0 ThemeService.qml
